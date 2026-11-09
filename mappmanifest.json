@@ -2,10 +2,10 @@
   "id": "fileshare",
   "name": "Обмен файлами",
   "version": "0.1.0",
-  "author": "mapphub",
-  "description": "Передача файлов",
+  "description": "Передача файлов по LAN",
   "icon": "icon.svg",
-  "permissions": ["net", "share", "fs"],
+  "author": "mapphub",
   "web": true,
+  "permissions": ["net", "share", "fs"],
   "routes": { "root": "/", "app": "/index.html" }
 }
