@@ -1,0 +1,11 @@
+{
+  "id": "fileshare",
+  "name": "Обмен файлами",
+  "version": "0.1.0",
+  "author": "mapphub",
+  "description": "Передача файлов",
+  "icon": "icon.svg",
+  "permissions": ["net", "share", "fs"],
+  "web": true,
+  "routes": { "root": "/", "app": "/index.html" }
+}

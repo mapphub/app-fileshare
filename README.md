@@ -1,2 +1,3 @@
-# app-fileshare
-Official LAN file share mini-app
+# Обмен файлами
+
+Список/запись через MiniApps.fs. LAN share — через шелл.
