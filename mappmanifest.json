@@ -1,11 +1,11 @@
 {
   "id": "fileshare",
   "name": "Обмен файлами",
-  "version": 1,
-  "description": "Передача файлов по LAN",
+  "version": 2,
+  "description": "Передача файлов по LAN через MiniApps.net (без +server.js)",
   "icon": "icon.svg",
   "routes": { "root": ".", "app": ".", "client": "." },
-  "server": { "host": true, "client": true, "network": true, "port": 8790 },
+  "server": { "host": true, "client": true, "network": true },
   "permissions": ["net", "share", "db"],
   "tags": ["files", "official"]
 }

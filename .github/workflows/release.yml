@@ -1,0 +1,27 @@
+name: Release package
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq zip
+      - name: Pack app.zip
+        run: |
+          mkdir -p dist-pkg
+          cp mappmanifest.json index.html style.css app.js icon.svg dist-pkg/
+          (cd dist-pkg && zip -r -q ../app.zip .)
+          ls -lh app.zip
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.2.${{ github.run_number }}
+          name: fileshare v0.2.${{ github.run_number }}
+          files: app.zip
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
