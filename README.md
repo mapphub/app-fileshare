@@ -1,6 +1,12 @@
 # app-fileshare
 
-Порт из HeadMad/mini-app-hub без `+server.js`.
-Хранение: MiniApps.db.local, синхронизация: MiniApps.net.
+Структура как у `mapp-template`:
 
-Релиз публикует `app.zip` → URL в catalog.
+```
+mapp/
+  mapp.manifest.json
+  icon.svg
+  public/
+```
+
+API: `MiniApp.db('local.set', …)`, `MiniApp.net('send', …)`.

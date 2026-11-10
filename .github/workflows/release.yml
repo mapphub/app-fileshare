@@ -11,16 +11,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: sudo apt-get update -qq && sudo apt-get install -y -qq zip
-      - name: Pack app.zip
+      - name: Pack mapp/ as app.zip
         run: |
-          mkdir -p dist-pkg
-          cp mappmanifest.json index.html style.css app.js icon.svg dist-pkg/
-          (cd dist-pkg && zip -r -q ../app.zip .)
+          test -d mapp
+          (cd mapp && zip -r -q ../app.zip .)
+          # also emit canonical mappmanifest for older shells
+          if [ -f mapp/mapp.manifest.json ]; then
+            cp mapp/mapp.manifest.json mappmanifest.json
+            zip -q app.zip mappmanifest.json || true
+          fi
           ls -lh app.zip
       - uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.2.${{ github.run_number }}
-          name: fileshare v0.2.${{ github.run_number }}
+          tag_name: v0.3.${{ github.run_number }}
+          name: fileshare v0.3.${{ github.run_number }}
           files: app.zip
           make_latest: true
         env:

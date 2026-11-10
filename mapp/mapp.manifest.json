@@ -1,0 +1,12 @@
+{
+  "id": "fileshare",
+  "name": "Обмен файлами",
+  "version": "0.3.0",
+  "description": "Передача файлов по LAN через MiniApp.net",
+  "icon": "icon.svg",
+  "routes": { "root": "public", "app": "public", "client": "public" },
+  "server": { "host": true, "client": true, "network": true },
+  "permissions": ["net", "share", "db"],
+  "tags": ["files", "official"],
+  "author": "mapphub"
+}
