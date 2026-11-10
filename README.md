@@ -1,4 +1,6 @@
-# fileshare
+# app-fileshare
 
-Порт `demo-fileshare` из прежней Mini Apps platform.
-LAN-обмен файлами через `api/v1/files` + WebSocket.
+Порт из HeadMad/mini-app-hub без `+server.js`.
+Хранение: MiniApps.db.local, синхронизация: MiniApps.net.
+
+Релиз публикует `app.zip` → URL в catalog.
