@@ -1,3 +1,4 @@
-# Обмен файлами
+# fileshare
 
-Список/запись через MiniApps.fs. LAN share — через шелл.
+Порт `demo-fileshare` из прежней Mini Apps platform.
+LAN-обмен файлами через `api/v1/files` + WebSocket.

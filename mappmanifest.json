@@ -1,11 +1,11 @@
 {
   "id": "fileshare",
   "name": "Обмен файлами",
-  "version": "0.1.0",
+  "version": 1,
   "description": "Передача файлов по LAN",
   "icon": "icon.svg",
-  "author": "mapphub",
-  "web": true,
-  "permissions": ["net", "share", "fs"],
-  "routes": { "root": "/", "app": "/index.html" }
+  "routes": { "root": ".", "app": ".", "client": "." },
+  "server": { "host": true, "client": true, "network": true, "port": 8790 },
+  "permissions": ["net", "share", "db"],
+  "tags": ["files", "official"]
 }
