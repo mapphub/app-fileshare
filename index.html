@@ -1,7 +1,20 @@
 <!DOCTYPE html>
-<html lang="ru"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Обмен файлами</title><link rel="stylesheet" href="./style.css"/></head><body>
-<main class="page"><h1>Обмен файлами</h1>
-<input type="file" id="file"/><button id="up">Сохранить</button><ul id="list"></ul>
-</main>
-<script src="./miniapps-bridge.js"></script><script src="./app.js"></script>
-</body></html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Обмен файлами</title>
+<link rel="stylesheet" href="./style.css"/>
+</head>
+<body>
+  <header class="top"><h1>Обмен файлами</h1></header>
+  <p class="hint">Загружайте файлы здесь. Для передачи на другое устройство включите «По сети» в Маркете.</p>
+  <div class="actions">
+    <label class="btn">Выбрать файл<input type="file" id="file" hidden/></label>
+    <button type="button" class="btn ghost" id="refresh">Обновить список</button>
+  </div>
+  <ul id="list" class="list"></ul>
+  <p id="err" class="err"></p>
+  <script src="./app.js"></script>
+</body>
+</html>
