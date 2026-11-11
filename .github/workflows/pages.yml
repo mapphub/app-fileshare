@@ -1,0 +1,30 @@
+name: Deploy Pages
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+  pages: write
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish www (routes.www → public)
+        run: |
+          set -euo pipefail
+          WWW=$(jq -r '.routes.www // .routes.app // "public"' mapp/mapp.manifest.json 2>/dev/null || echo public)
+          SRC="mapp/${WWW}"
+          test -d "$SRC"
+          rm -rf /tmp/gh-pages && mkdir -p /tmp/gh-pages
+          cp -a "$SRC"/. /tmp/gh-pages/
+          test -f /tmp/gh-pages/index.html
+          cd /tmp/gh-pages
+          git init
+          git checkout -b gh-pages
+          git config user.name mapphub-bot
+          git config user.email bot@mapphub.local
+          git add -A
+          git commit -m "pages from mapp/${WWW}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" gh-pages
