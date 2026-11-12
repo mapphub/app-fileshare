@@ -11,20 +11,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Publish www (routes.www → public)
+      - name: Publish www → gh-pages
         run: |
           set -euo pipefail
           WWW=$(jq -r '.routes.www // .routes.app // "public"' mapp/mapp.manifest.json 2>/dev/null || echo public)
           SRC="mapp/${WWW}"
-          test -d "$SRC"
+          test -d "$SRC" && test -f "$SRC/index.html"
           rm -rf /tmp/gh-pages && mkdir -p /tmp/gh-pages
           cp -a "$SRC"/. /tmp/gh-pages/
-          test -f /tmp/gh-pages/index.html
           cd /tmp/gh-pages
-          git init
-          git checkout -b gh-pages
+          git init && git checkout -b gh-pages
           git config user.name mapphub-bot
           git config user.email bot@mapphub.local
-          git add -A
-          git commit -m "pages from mapp/${WWW}"
+          git add -A && git commit -m "pages from mapp/${WWW}"
           git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" gh-pages
+      - name: Enable GitHub Pages
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if gh api "repos/${{ github.repository }}/pages" >/dev/null 2>&1; then
+            gh api -X PUT "repos/${{ github.repository }}/pages" -f build_type=legacy -f source[branch]=gh-pages -f source[path]=/ || true
+          else
+            gh api -X POST "repos/${{ github.repository }}/pages" -f build_type=legacy -f source[branch]=gh-pages -f source[path]=/ || true
+          fi
+          gh api "repos/${{ github.repository }}/pages" --jq '{html_url,status,source}' || true
