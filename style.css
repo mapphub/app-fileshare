@@ -1,0 +1,8 @@
+body{margin:0;font-family:system-ui;background:var(--mapp-bg,#0d1117);color:var(--mapp-text,#e6edf3);padding:12px}
+.top h1{font-size:16px;margin:0}.hint{font-size:12px;color:var(--mapp-muted,#8b949e)}
+.actions{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:10px 14px;border-radius:8px;background:var(--mapp-primary,#2f81f7);color:#fff;font-weight:600;font-size:13px;border:0;cursor:pointer}
+.btn.ghost{background:transparent;border:1px solid var(--mapp-border,#30363d);color:var(--mapp-text)}
+.list{list-style:none;padding:0;margin:0}
+.list li{padding:10px 12px;border:1px solid var(--mapp-border,#30363d);border-radius:8px;margin-bottom:8px;display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:13px}
+.err{color:#f85149;font-size:13px}button.link{border:0;background:transparent;color:var(--mapp-primary,#58a6ff);font-weight:600;cursor:pointer}
