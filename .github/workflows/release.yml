@@ -46,12 +46,13 @@ jobs:
       - name: Update catalog.json only
         if: steps.skip.outputs.skip != 'true'
         env:
-          TOKEN: ${{ secrets.PUBLIC_SITE_TOKEN }}
+          ORG_ADMIN_TOKEN: ${{ secrets.ORG_ADMIN_TOKEN }}
           VER: ${{ steps.ver.outputs.version }}
           ID: ${{ steps.ver.outputs.id }}
         run: |
           set -euo pipefail
-          TOKEN="${TOKEN:-${{ secrets.GITHUB_TOKEN }}}"
+          TOKEN="${ORG_ADMIN_TOKEN:-}"
+          if [ -z "$TOKEN" ]; then echo "ORG_ADMIN_TOKEN missing"; exit 0; fi
           PKG="https://github.com/${{ github.repository }}/releases/latest/download/app.zip"
           MU="https://raw.githubusercontent.com/${{ github.repository }}/main/mapp/mapp.manifest.json"
           NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
