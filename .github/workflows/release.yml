@@ -10,22 +10,77 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: sudo apt-get update -qq && sudo apt-get install -y -qq zip
-      - name: Pack mapp/ as app.zip
+
+      - name: Read version
+        id: ver
         run: |
-          test -d mapp
+          set -euo pipefail
+          MAN=mapp/mapp.manifest.json
+          test -f "$MAN"
+          VER=$(jq -r '.version // empty' "$MAN")
+          ID=$(jq -r '.id // "fileshare"' "$MAN")
+          test -n "$VER"
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+          echo "id=$ID" >> "$GITHUB_OUTPUT"
+
+      - name: Skip if version already released
+        id: skip
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          VER="${{ steps.ver.outputs.version }}"
+          CUR=$(gh release view latest --json body,name,tagName -q '.body + " " + .name + " " + .tagName' 2>/dev/null || echo "")
+          if [ "${{ github.event_name }}" = "push" ] && echo "$CUR" | grep -qF "$VER"; then
+            echo "Version $VER already in latest release — skip"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Pack mapp/
+        if: steps.skip.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq && sudo apt-get install -y -qq zip
           (cd mapp && zip -r -q ../app.zip .)
-          # also emit canonical mappmanifest for older shells
           if [ -f mapp/mapp.manifest.json ]; then
             cp mapp/mapp.manifest.json mappmanifest.json
             zip -q app.zip mappmanifest.json || true
           fi
           ls -lh app.zip
-      - uses: softprops/action-gh-release@v2
+
+      - name: Publish release latest
+        if: steps.skip.outputs.skip != 'true'
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.3.${{ github.run_number }}
-          name: fileshare v0.3.${{ github.run_number }}
+          tag_name: latest
+          name: ${{ steps.ver.outputs.id }} ${{ steps.ver.outputs.version }}
+          body: |
+            version ${{ steps.ver.outputs.version }}
+            id ${{ steps.ver.outputs.id }}
           files: app.zip
           make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push package to portal
+        if: steps.skip.outputs.skip != 'true'
+        env:
+          PUBLIC_SITE_TOKEN: ${{ secrets.PUBLIC_SITE_TOKEN }}
+          PKG_VER: ${{ steps.ver.outputs.version }}
+        run: |
+          set -euo pipefail
+          if [ -z "${PUBLIC_SITE_TOKEN:-}" ]; then
+            echo "PUBLIC_SITE_TOKEN not set — skip portal push"
+            exit 0
+          fi
+          ID=fileshare
+          CONTENT=$(base64 -w0 app.zip)
+          API="https://api.github.com/repos/mapphub/mapphub.github.io/contents/packages/${ID}.zip"
+          HDR=(-H "Authorization: Bearer $PUBLIC_SITE_TOKEN" -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28")
+          SHA=$(curl -fsSL "${HDR[@]}" "$API" 2>/dev/null | jq -r '.sha // empty' || true)
+          BODY=$(jq -n --arg msg "package $ID@$PKG_VER" --arg content "$CONTENT" --arg sha "$SHA" \
+            '{message:$msg, content:$content} + (if $sha != "" then {sha:$sha} else {} end)')
+          curl -fsSL -X PUT "${HDR[@]}" -H "Content-Type: application/json" -d "$BODY" "$API" >/dev/null
+          echo "portal packages/${ID}.zip updated"
