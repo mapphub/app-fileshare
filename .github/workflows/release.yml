@@ -14,12 +14,9 @@ jobs:
       - name: Read version
         id: ver
         run: |
-          set -euo pipefail
           MAN=mapp/mapp.manifest.json
-          test -f "$MAN"
           VER=$(jq -r '.version // empty' "$MAN")
           ID=$(jq -r '.id // "fileshare"' "$MAN")
-          test -n "$VER"
           echo "version=$VER" >> "$GITHUB_OUTPUT"
           echo "id=$ID" >> "$GITHUB_OUTPUT"
 
@@ -28,59 +25,39 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -euo pipefail
           VER="${{ steps.ver.outputs.version }}"
           CUR=$(gh release view latest --json body,name,tagName -q '.body + " " + .name + " " + .tagName' 2>/dev/null || echo "")
           if [ "${{ github.event_name }}" = "push" ] && echo "$CUR" | grep -qF "$VER"; then
-            echo "Version $VER already in latest release — skip"
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
             echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Pack mapp/
+      - name: Pack + release in app repo
         if: steps.skip.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -euo pipefail
           sudo apt-get update -qq && sudo apt-get install -y -qq zip
           (cd mapp && zip -r -q ../app.zip .)
-          if [ -f mapp/mapp.manifest.json ]; then
-            cp mapp/mapp.manifest.json mappmanifest.json
-            zip -q app.zip mappmanifest.json || true
-          fi
-          ls -lh app.zip
+          gh release delete latest -y 2>/dev/null || true
+          gh release create latest app.zip --title "${{ steps.ver.outputs.id }} ${{ steps.ver.outputs.version }}" --notes "version ${{ steps.ver.outputs.version }}" --latest
 
-      - name: Publish release latest
-        if: steps.skip.outputs.skip != 'true'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: latest
-          name: ${{ steps.ver.outputs.id }} ${{ steps.ver.outputs.version }}
-          body: |
-            version ${{ steps.ver.outputs.version }}
-            id ${{ steps.ver.outputs.id }}
-          files: app.zip
-          make_latest: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Push package to portal
+      - name: Update catalog.json only
         if: steps.skip.outputs.skip != 'true'
         env:
-          PUBLIC_SITE_TOKEN: ${{ secrets.PUBLIC_SITE_TOKEN }}
-          PKG_VER: ${{ steps.ver.outputs.version }}
+          TOKEN: ${{ secrets.PUBLIC_SITE_TOKEN }}
+          VER: ${{ steps.ver.outputs.version }}
+          ID: ${{ steps.ver.outputs.id }}
         run: |
           set -euo pipefail
-          if [ -z "${PUBLIC_SITE_TOKEN:-}" ]; then
-            echo "PUBLIC_SITE_TOKEN not set — skip portal push"
-            exit 0
-          fi
-          ID=fileshare
-          CONTENT=$(base64 -w0 app.zip)
-          API="https://api.github.com/repos/mapphub/mapphub.github.io/contents/packages/${ID}.zip"
-          HDR=(-H "Authorization: Bearer $PUBLIC_SITE_TOKEN" -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28")
-          SHA=$(curl -fsSL "${HDR[@]}" "$API" 2>/dev/null | jq -r '.sha // empty' || true)
-          BODY=$(jq -n --arg msg "package $ID@$PKG_VER" --arg content "$CONTENT" --arg sha "$SHA" \
-            '{message:$msg, content:$content} + (if $sha != "" then {sha:$sha} else {} end)')
-          curl -fsSL -X PUT "${HDR[@]}" -H "Content-Type: application/json" -d "$BODY" "$API" >/dev/null
-          echo "portal packages/${ID}.zip updated"
+          TOKEN="${TOKEN:-${{ secrets.GITHUB_TOKEN }}}"
+          PKG="https://github.com/${{ github.repository }}/releases/latest/download/app.zip"
+          MU="https://raw.githubusercontent.com/${{ github.repository }}/main/mapp/mapp.manifest.json"
+          NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          rm -rf /tmp/site && git clone --depth 1 "https://x-access-token:${TOKEN}@github.com/mapphub/mapphub.github.io.git" /tmp/site
+          jq --arg id "$ID" --arg ver "$VER" --arg pkg "$PKG" --arg mu "$MU" --arg now "$NOW" \
+            '(.apps//[])|=map(if .id==$id then .version=$ver|.packageUrl=$pkg|.releaseUrl=$pkg|.manifestUrl=$mu else . end)|.updatedAt=$now' \
+            /tmp/site/catalog.json > /tmp/c.json && mv /tmp/c.json /tmp/site/catalog.json
+          cd /tmp/site && git config user.name mapphub-ci && git config user.email ci@mapphub.local
+          git add catalog.json && (git diff --cached --quiet || git commit -m "catalog: $ID@$VER") && git push || true
