@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.ORG_ADMIN_TOKEN }}
 
       - name: Read version
         id: ver
@@ -23,7 +25,7 @@ jobs:
       - name: Skip if version already released
         id: skip
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.ORG_ADMIN_TOKEN }}
         run: |
           VER="${{ steps.ver.outputs.version }}"
           CUR=$(gh release view latest --json body,name,tagName -q '.body + " " + .name + " " + .tagName' 2>/dev/null || echo "")
@@ -36,7 +38,7 @@ jobs:
       - name: Pack + release in app repo
         if: steps.skip.outputs.skip != 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.ORG_ADMIN_TOKEN }}
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq zip
           (cd mapp && zip -r -q ../app.zip .)
